@@ -116,6 +116,8 @@ Ideal for **daily monitoring**, **bid opportunity alerts**, and **market intelli
 - Windows-friendly execution
 
 ---
+file_00000000ae0c7208a7a2b22b6d18e355 (1).png
+---
 
 ## 📦 Installation
 
@@ -257,19 +259,4 @@ Please open an issue or submit a pull request.
 
 📄 License
 
-Released under the MIT License.
-
-
----
-
-📬 Contact
-
-For customization, enterprise deployment, or support, feel free to reach out.
-
-
----
-
-Built for reliability. Designed for daily automation.
-
----
-
+Released under the MIT
