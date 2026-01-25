@@ -268,11 +268,3 @@ For customization, enterprise deployment, or support, feel free to reach out.
 Built for reliability. Designed for daily automation.
 
 ---
-
-If you want, I can also generate (one-shot Markdown files):
-
-- `CONTRIBUTING.md`
-- `LICENSE` (MIT)
-- `run_eproc_scraper.bat`
-- GitHub Actions CI workflow
-- Shields.io badges
