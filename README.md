@@ -72,6 +72,8 @@ A robust, production-grade Python automation tool to scrape tenders from **all N
 
 ## 🧪 Sample Console Output
 
+![Sample console execution](https://raw.githubusercontent.com/SatadruNoob/e-proc-site-data-scrapper/57b4075294d72ab6c64c2587f2cddbe2f287cb26/file_00000000ae0c7208a7a2b22b6d18e355%20(1).png)
+
 !(https://github.com/SatadruNoob/e-proc-site-data-scrapper/blob/9486216ce8dd9e4be4f9e14a5ae9b70dbc047463/file_00000000ae0c7208a7a2b22b6d18e355%20(1).png)
 
 ![Sample console execution](assets/console_run.jpg)
