@@ -143,21 +143,21 @@ Option 1: Run directly
 
 python eproc_data_scraper.py
 
-Option 2: One-click Windows launcher
 
-Use the provided batch file:
+Option 2: One-click Windows launcher (Recommended for Windows)
 
-run_eproc_scraper.bat
+This repository includes a ready-to-use Windows batch file:
 
-This automatically:
+`run_eproc_scraper.bat`
 
-Activates the virtual environment
+Features:
+- Automatically creates and activates a virtual environment
+- Installs required Python dependencies (first run only)
+- Installs Playwright Chromium (first run only)
+- Runs the scraper with a single double-click
+- Works regardless of where the batch file is launched from
 
-Runs the scraper
-
-Keeps the console open for logs
-
-
+Simply double-click `run_eproc_scraper.bat` to run the scraper.
 
 ---
 
