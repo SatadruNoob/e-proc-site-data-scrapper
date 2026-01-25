@@ -1,11 +1,3 @@
-Perfect — here is the FULLY MARKDOWN-COMPLIANT, GITHUB-READY README.md in ONE-SHOT COPY FORMAT.
-
-👉 This is proper GitHub Markdown.
-👉 Just copy everything below and paste directly into README.md.
-
-
----
-
 # NIC eProcurement Tender Scraper (India)
 
 A robust, production-grade Python automation tool to scrape tenders from **all NIC GePN–based e-Procurement portals in India**, including **State/UT portals, Central Government, CPSEs, PSUs, Defence, and Infrastructure agencies**, track new tenders daily, and maintain a deduplicated historical Excel database.
