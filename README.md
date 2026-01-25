@@ -70,7 +70,9 @@ A robust, production-grade Python automation tool to scrape tenders from **all N
 
 ---
 
+## 🧪 Sample Console Output
 
+![Sample console execution](assets/console_run.jpg)
 
 ---
 
