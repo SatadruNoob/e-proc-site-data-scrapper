@@ -1,42 +1,94 @@
-Perfect — below is a ONE-SHOT, SINGLE COPY-PASTE READY README.md.
+Perfect — here is the FULLY MARKDOWN-COMPLIANT, GITHUB-READY README.md in ONE-SHOT COPY FORMAT.
 
-👉 Just click once, copy everything, and paste directly into README.md on GitHub.
-No explanations, no breaks, no formatting issues.
+👉 This is proper GitHub Markdown.
+👉 Just copy everything below and paste directly into README.md.
 
 
 ---
 
 # NIC eProcurement Tender Scraper (India)
 
-A robust, production-grade Python automation tool to scrape tenders from all NIC GePN e-Procurement portals across Indian States and Union Territories, track new tenders daily, and maintain a deduplicated historical Excel database.
+A robust, production-grade Python automation tool to scrape tenders from **all NIC GePN–based e-Procurement portals in India**, including **State/UT portals, Central Government, CPSEs, PSUs, Defence, and Infrastructure agencies**, track new tenders daily, and maintain a deduplicated historical Excel database.
 
 ---
 
 ## 🚀 Features
 
 - 🔍 Searches tenders using a configurable keyword (default: `batter`)
-- 🌍 Covers all Indian States & Union Territories via NIC GePN portals
+- 🌍 Covers **States, UTs, Central Govt, CPSEs, PSUs, Defence & Infra portals**
 - ♻️ Automatic retry handling for network/DNS failures
 - 📊 Generates and maintains a single Excel master file
 - 🆕 Flags newly discovered tenders using a `New Today` column
 - 🗂️ Preserves historical tender data (no overwrites, no duplicates)
-- 🧠 Tracks First Seen Date for every tender
+- 🧠 Tracks *First Seen Date* for every tender
 - 🖱️ One-click execution via Windows batch launcher
 - 🧱 Built on Playwright for reliability and dynamic content handling
+- 🧩 Portal-specific handling (e.g. NTPC popup auto-close)
+
+---
+
+## 🌐 Covered Portals
+
+### 🏛️ State & Union Territory NIC GePN Portals
+- All Indian States & Union Territories using `*.gov.in/nicgep/app`
+
+### 🇮🇳 Central Government
+- **Central Government e-Procurement**  
+  https://eprocure.gov.in/eprocure/app
+
+### 🏢 Central Public Sector Enterprises (CPSE)
+- **CPSE e-Procurement**  
+  https://etenders.gov.in/eprocure/app
+
+### ⚡ Power & Energy
+- **NTPC Limited**  
+  https://eprocurentpc.nic.in/nicgep/app  
+- **BHEL**  
+  https://eprocurebhel.co.in/nicgep/app  
+- **BEL (Defence Electronics)**  
+  https://eprocurebel.co.in/nicgep/app  
+
+### 🛢️ Oil, Gas & Process Industries
+- **Indian Oil Corporation Ltd (IOCL)**  
+  https://iocletenders.nic.in/nicgep/app  
+- **CPCL**  
+  https://cpcletenders.nic.in/nicgep/app  
+
+### 🚢 Shipbuilding & Heavy Engineering
+- **Mazagon Dock Shipbuilders Ltd**  
+  https://eprocuremdl.nic.in/nicgep/app  
+- **Hindustan Shipyard Ltd**  
+  https://eprocurehsl.nic.in/nicgep/app  
+- **Goa Shipyard Ltd**  
+  https://eprocuregsl.nic.in/nicgep/app  
+- **Garden Reach Shipbuilders & Engineers (GRSE)**  
+  https://eprocuregrse.co.in/nicgep/app  
+
+### 🏗️ Infrastructure & Mining
+- **Coal India Limited**  
+  https://coalindiatenders.nic.in/nicgep/app  
+- **PMGSY**  
+  https://pmgsytenders.gov.in/nicgep/app  
+
+### 🛡️ Defence & Strategic
+- **Defence e-Procurement Portal**  
+  https://defproc.gov.in/nicgep/app  
+- **MIDHANI (Mishra Dhatu Nigam Limited)**  
+  https://eprocuremidhani.nic.in/nicgep/app  
 
 ---
 
 ## 📁 Output Overview
 
-The scraper generates or updates the following Excel file:
+The scraper generates or updates:
 
 NIC_Batter_Tenders_All_States.xlsx
 
-### 📊 Columns in Excel
+### 📊 Excel Columns
 
 | Column Name | Description |
-|------------|------------|
-| State/UT | State or Union Territory |
+|--------------|-------------|
+| State/UT | State, UT, or Central/PSU entity |
 | S.No | Serial number from portal |
 | e-Published Date | Tender publish date |
 | Closing Date | Bid submission closing date |
@@ -50,11 +102,11 @@ NIC_Batter_Tenders_All_States.xlsx
 
 ## 🧠 How “New Today” Works
 
-- YES → Tender did not exist in Excel before this run  
-- NO → Tender already existed from previous runs  
-- Multiple runs on the same day do not duplicate data  
+- **YES** → Tender not present in Excel before this run  
+- **NO** → Tender already exists from previous runs  
+- Multiple runs on the same day do **not** duplicate data  
 
-Ideal for daily monitoring, opportunity alerts, and market intelligence.
+Ideal for **daily monitoring**, **bid opportunity alerts**, and **market intelligence**.
 
 ---
 
@@ -64,6 +116,7 @@ Ideal for daily monitoring, opportunity alerts, and market intelligence.
 - Playwright (Chromium)
 - Pandas
 - OpenPyXL
+- Async-safe (Colab / Jupyter compatible)
 - Windows-friendly execution
 
 ---
@@ -87,7 +140,7 @@ venv\Scripts\Activate.ps1
 3️⃣ Install dependencies
 
 pip install playwright pandas openpyxl
-playwright install
+playwright install chromium
 
 
 ---
@@ -118,11 +171,11 @@ Keeps the console open for logs
 
 🔁 Retry & Failure Handling
 
-Each State/UT is retried up to 3 times
+Each portal retried up to 3 times
 
-DNS/network failures are isolated per state
+DNS/network failures isolated per portal
 
-Failed states are recorded in Excel for visibility
+Failed portals recorded in Excel
 
 Script never crashes due to a single portal failure
 
@@ -134,6 +187,10 @@ Script never crashes due to a single portal failure
 
 🔍 Searching in Maharashtra
   Attempt 1
+
+🔍 Searching in NTPC Limited
+  Attempt 1
+  (Popup closed automatically)
 
 🔍 Searching in Goa
   Attempt 1
@@ -151,6 +208,8 @@ Script never crashes due to a single portal failure
 Daily tender monitoring
 
 Business development & bid tracking
+
+PSU / Defence opportunity scanning
 
 Market intelligence
 
@@ -180,13 +239,13 @@ Designed for responsible and compliant usage
 
 Email alerts for New Today tenders
 
-Closed tender detection
+Closed / expired tender detection
 
-Power BI / Tableau-ready outputs
+Power BI / Tableau-ready datasets
 
-Parallel scraping for faster execution
+Parallel async scraping for speed
 
-Windows Task Scheduler integration
+Windows Task Scheduler & CI automation
 
 
 
@@ -202,7 +261,7 @@ Please open an issue or submit a pull request.
 
 📄 License
 
-This project is released under the MIT License.
+Released under the MIT License.
 
 
 ---
@@ -218,11 +277,10 @@ Built for reliability. Designed for daily automation.
 
 ---
 
-If you want next, I can also give you (one-shot copies):
+If you want, I can also generate (one-shot Markdown files):
+
 - `CONTRIBUTING.md`
-- `LICENSE`
+- `LICENSE` (MIT)
 - `run_eproc_scraper.bat`
-- GitHub badges
-- GitHub Actions workflow
-
-
+- GitHub Actions CI workflow
+- Shields.io badges
