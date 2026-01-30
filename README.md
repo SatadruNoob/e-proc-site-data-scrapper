@@ -1,28 +1,37 @@
+markdown
 # NIC eProcurement Tender Scraper (India)
 
-A robust, production-grade Python automation tool to scrape tenders from **all NIC GePN–based e-Procurement portals in India**, including **State/UT portals, Central Government, CPSEs, PSUs, Defence, and Infrastructure agencies**, track new tenders daily, and maintain a deduplicated historical Excel database.
+A **production-ready Python automation system** to scrape tenders from **all NIC GePN–based e-Procurement portals in India** — covering **States, UTs, Central Government, CPSEs, PSUs, Defence, Power, Infrastructure, and Strategic agencies** — with **strong identity hashing, bulletproof deduplication, and historical tracking**.
+
+This tool is designed for **daily execution**, **zero false positives**, and **long-term data integrity**.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Capabilities
 
-- 🔍 Searches tenders using a configurable keyword (default: `batter`)
+- 🔍 Keyword-based tender search (default: `batter`)
 - 🌍 Covers **States, UTs, Central Govt, CPSEs, PSUs, Defence & Infra portals**
-- ♻️ Automatic retry handling for network/DNS failures
-- 📊 Generates and maintains a single Excel master file
-- 🆕 Flags newly discovered tenders using a `New Today` column
-- 🗂️ Preserves historical tender data (no overwrites, no duplicates)
-- 🧠 Tracks *First Seen Date* for every tender
+- 🧠 **Tender-ID–only identity hashing (production-safe)**
+- 🧱 **DOM-level + Excel-level deduplication**
+- 🆕 Accurate `New Today` flagging (idempotent across runs)
+- 📊 Maintains a single historical Excel master file
+- 📅 Tracks **First Seen Date** for every tender
+- ♻️ Automatic retry handling for DNS / network failures
 - 🖱️ One-click execution via Windows batch launcher
-- 🧱 Built on Playwright for reliability and dynamic content handling
 - 🧩 Portal-specific handling (e.g. NTPC popup auto-close)
+- 🧪 Deterministic results across repeated runs
 
 ---
 
 ## 🌐 Covered Portals
 
 ### 🏛️ State & Union Territory NIC GePN Portals
-- All Indian States & Union Territories using `*.gov.in/nicgep/app`
+All Indian States & Union Territories using:
+```
+
+*.gov.in/nicgep/app
+
+```
 
 ### 🇮🇳 Central Government
 - **Central Government e-Procurement**  
@@ -70,10 +79,89 @@ A robust, production-grade Python automation tool to scrape tenders from **all N
 
 ---
 
-## 🧪 Sample Console Output
+## 🧠 Strong Data Extraction Methodology
 
-![Sample console execution](https://raw.githubusercontent.com/SatadruNoob/e-proc-site-data-scrapper/57b4075294d72ab6c64c2587f2cddbe2f287cb26/file_00000000ae0c7208a7a2b22b6d18e355%20(1).png)
+### 🔑 Tender ID Extraction (Authoritative Key)
 
+NIC GePN portals consistently follow this pattern:
+
+```
+
+[Title / Description] [Reference / NIT] [ACTUAL_TENDER_ID]
+
+```
+
+Example:
+```
+
+[Work of Supply and Commissioning of Battery Bank]
+[Tender-09/25-26]
+[2026_ED_27105_2]
+
+````
+
+📌 **Rule applied**:
+- Extract the **LAST bracket value**
+- This value is treated as the **single source of truth**
+- All identity, deduplication, and comparison logic is based on this key
+
+---
+
+## 🔐 Identity Hashing (Deduplication Backbone)
+
+### Why Tender-ID-Only Hashing?
+
+- Tender ID is:
+  - Issuer-generated
+  - Immutable
+  - Unique across the entire NIC ecosystem
+- State names, titles, dates, and organisations may vary or normalize differently over time
+
+### ✅ Identity Hash Formula
+
+```text
+Identity Hash = SHA256(Tender ID)
+````
+
+✔ No normalization
+✔ No date dependency
+✔ No state-name dependency
+✔ Stable across Excel reads / writes
+✔ Stable across multiple runs
+
+This guarantees:
+
+* **Zero false duplicates**
+* **Zero false “New Today” flags**
+* **Idempotent daily execution**
+
+---
+
+## 🧠 In-Memory vs Excel Comparison (How It Works)
+
+1. **Load existing Excel**
+2. Read `Identity Hash` column
+3. Build an in-memory set of known hashes
+4. Scrape new tenders
+5. Compute `Identity Hash` for each scraped tender
+6. Compare:
+
+```python
+if identity_hash in existing_hashes:
+    New Today = "NO"
+else:
+    New Today = "YES"
+```
+
+7. Append new tenders
+8. Drop duplicates by `Identity Hash`
+9. Save Excel
+
+📌 **Result**:
+
+* First run → all tenders = `YES`
+* Second run → same tenders = `NO`
+* Only truly new Tender IDs → `YES`
 
 ---
 
@@ -81,183 +169,131 @@ A robust, production-grade Python automation tool to scrape tenders from **all N
 
 The scraper generates or updates:
 
+```
 NIC_Batter_Tenders_All_States.xlsx
+```
 
 ### 📊 Excel Columns
 
-| Column Name | Description |
-|--------------|-------------|
-| State/UT | State, UT, or Central/PSU entity |
-| S.No | Serial number from portal |
-| e-Published Date | Tender publish date |
-| Closing Date | Bid submission closing date |
-| Opening Date | Bid opening date |
-| Title and Ref.No./Tender ID | Tender title with reference and ID |
-| Organisation Chain | Issuing authority |
-| First Seen Date | Date when tender first appeared |
-| New Today | YES if new in current run, otherwise NO |
+| Column Name                 | Description                        |
+| --------------------------- | ---------------------------------- |
+| State/UT                    | State, UT, or Central / PSU entity |
+| S.No                        | Serial number from portal          |
+| e-Published Date            | Tender publish date                |
+| Closing Date                | Bid submission closing date        |
+| Opening Date                | Bid opening date                   |
+| Title and Ref.No./Tender ID | Full tender text                   |
+| Tender ID                   | Extracted final bracket value      |
+| Organisation Chain          | Issuing authority                  |
+| First Seen Date             | Date when tender first appeared    |
+| Identity Hash               | SHA256(Tender ID)                  |
+| New Today                   | YES only on first discovery        |
 
 ---
 
-## 🧠 How “New Today” Works
+## 🧪 Sample Console Output
 
-- **YES** → Tender not present in Excel before this run  
-- **NO** → Tender already exists from previous runs  
-- Multiple runs on the same day do **not** duplicate data  
-
-Ideal for **daily monitoring**, **bid opportunity alerts**, and **market intelligence**.
+![Sample console execution](https://raw.githubusercontent.com/SatadruNoob/e-proc-site-data-scrapper/57b4075294d72ab6c64c2587f2cddbe2f287cb26/file_00000000ae0c7208a7a2b22b6d18e355%20\(1\).png)
 
 ---
 
 ## 🛠️ Tech Stack
 
-- Python 3.10+
-- Playwright (Chromium)
-- Pandas
-- OpenPyXL
-- Async-safe (Colab / Jupyter compatible)
-- Windows-friendly execution
+* Python 3.10+
+* Playwright (Chromium)
+* Pandas
+* OpenPyXL
+* Async-safe (Colab / Jupyter compatible)
+* Windows-friendly execution
 
 ---
 
-## 📦 Installation
+## ▶️ Running the Scraper
 
-### 1️⃣ Clone the repository
+### Option 1: Direct Run
 
 ```bash
-git clone https://github.com/your-username/nic-eproc-tender-scraper.git
-cd nic-eproc-tender-scraper
-
-2️⃣ Create and activate virtual environment
-
-python -m venv venv
-
-Windows (PowerShell)
-
-venv\Scripts\Activate.ps1
-
-3️⃣ Install dependencies
-
-pip install playwright pandas openpyxl
-playwright install chromium
-
-
----
-
-▶️ Running the Scraper
-
-Option 1: Run directly
-
 python eproc_data_scraper.py
+```
 
+### Option 2: One-Click Windows Launcher (Recommended)
 
-Option 2: One-click Windows launcher (Recommended for Windows)
+This repository includes:
 
-This repository includes a ready-to-use Windows batch file:
-
-`run_eproc_scraper.bat`
+```
+run_eproc_scraper.bat
+```
 
 Features:
-- Automatically creates and activates a virtual environment
-- Installs required Python dependencies (first run only)
-- Installs Playwright Chromium (first run only)
-- Runs the scraper with a single double-click
-- Works regardless of where the batch file is launched from
 
-Simply double-click `run_eproc_scraper.bat` to run the scraper.
+* Auto-creates & activates virtual environment
+* Installs dependencies (first run only)
+* Installs Playwright Chromium (first run only)
+* Runs scraper with a single double-click
 
 ---
 
-🔁 Retry & Failure Handling
+## 🔁 Retry & Failure Handling
 
-Each portal retried up to 3 times
-
-DNS/network failures isolated per portal
-
-Failed portals recorded in Excel
-
-Script never crashes due to a single portal failure
-
-
+* Each portal retried up to 3 times
+* Network / DNS failures isolated per portal
+* Failed portals do **not** crash the run
+* Partial data is preserved safely
 
 ---
 
-🧪 Sample Console Output
+## 📌 Use Cases
 
-🔍 Searching in Maharashtra
-  Attempt 1
-
-🔍 Searching in NTPC Limited
-  Attempt 1
-  (Popup closed automatically)
-
-🔍 Searching in Goa
-  Attempt 1
-  ⚠ Error: net::ERR_NAME_NOT_RESOLVED
-  Attempt 2
-  Attempt 3
-
-✅ Done. Excel updated with 'New Today' column.
-
+* Daily tender monitoring
+* PSU / Defence opportunity scanning
+* Business development & bid tracking
+* Market intelligence pipelines
+* Procurement automation
+* Dashboard & alert integrations
 
 ---
 
-📌 Use Cases
+## 🔒 Compliance & Ethics
 
-Daily tender monitoring
-
-Business development & bid tracking
-
-PSU / Defence opportunity scanning
-
-Market intelligence
-
-Procurement automation
-
-Integration with email alerts or dashboards
-
-
+* Scrapes **publicly available data only**
+* No authentication bypass
+* No CAPTCHA circumvention
+* Designed for responsible, compliant usage
 
 ---
 
-🔒 Compliance & Ethics
+## 🧭 Roadmap
 
-Scrapes publicly available data only
-
-No authentication bypass
-
-No CAPTCHA circumvention
-
-Designed for responsible and compliant usage
-
-
+* Email alerts for new tenders
+* Closed / expired tender detection
+* Power BI / Tableau ready exports
+* Parallel async scraping
+* Windows Task Scheduler / CI automation
 
 ---
 
-🧭 Roadmap
-
-Email alerts for New Today tenders
-
-Closed / expired tender detection
-
-Power BI / Tableau-ready datasets
-
-Parallel async scraping for speed
-
-Windows Task Scheduler & CI automation
-
-
-
----
-
-🤝 Contributions
+## 🤝 Contributions
 
 Contributions, improvements, and issue reports are welcome.
 Please open an issue or submit a pull request.
 
+---
+
+## 📄 License
+
+Released under the **MIT License**
+
+```
 
 ---
 
-📄 License
+If you want next, I can also deliver (one-shot copies):
 
-Released under the MIT
+- `ARCHITECTURE.md` (hashing & data-flow diagrams)
+- `CHANGELOG.md` (pre-hash vs post-hash evolution)
+- `CONTRIBUTING.md`
+- CI-ready GitHub Actions workflow
+- Excel schema migration notes
+
+Just say the word.
+```
