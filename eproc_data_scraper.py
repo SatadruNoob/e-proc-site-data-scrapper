@@ -2,12 +2,20 @@ from playwright.sync_api import sync_playwright
 import pandas as pd
 import time
 import os
+import re
+import hashlib
 from datetime import datetime
+
+# ======================= CONFIG =======================
+
+KEYWORD = "batter"
+MAX_RETRIES = 3
+OUTPUT_FILE = "NIC_Batter_Tenders_All_States.xlsx"
+RUN_DATE = datetime.now().strftime("%Y-%m-%d")
 
 # ======================= PORTALS =======================
 
 SITES = {
-    # -------------------- STATES / UTs --------------------
     "Andaman": "https://eprocure.andamannicobar.gov.in/nicgep/app",
     "Arunachal": "https://arunachaltenders.gov.in/nicgep/app",
     "Assam": "https://assamtenders.gov.in/nicgep/app",
@@ -40,11 +48,8 @@ SITES = {
     "Uttar Pradesh": "https://etender.up.nic.in/nicgep/app",
     "West Bengal": "https://wbtenders.gov.in/nicgep/app",
 
-    # -------------------- CENTRAL GOVT / CPSE --------------------
     "Central Govt eProcurement": "https://eprocure.gov.in/eprocure/app",
     "CPSE eProcurement": "https://etenders.gov.in/eprocure/app",
-
-    # -------------------- PSU / DEFENCE --------------------
     "NTPC Limited": "https://eprocurentpc.nic.in/nicgep/app",
     "MIDHANI": "https://eprocuremidhani.nic.in/nicgep/app",
     "Mazagon Dock Shipbuilders": "https://eprocuremdl.nic.in/nicgep/app",
@@ -60,73 +65,78 @@ SITES = {
     "Defence e-Procurement": "https://defproc.gov.in/nicgep/app"
 }
 
-KEYWORD = "batter"
-MAX_RETRIES = 3
-OUTPUT_FILE = "NIC_Batter_Tenders_All_States.xlsx"
+# ======================= HELPERS =======================
+
+def extract_tender_id(title: str) -> str:
+    if not title:
+        return ""
+    matches = re.findall(r"\[([^\]]+)\]", title)
+    return matches[-1].strip() if matches else ""
+
+def sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+def compute_identity_hash(tender_id: str) -> str:
+    return sha256(tender_id.strip())
+
+# ======================= SCRAPING =======================
 
 results = []
-run_date = datetime.now().strftime("%Y-%m-%d")
-
-# ======================= SCRAPER =======================
+seen_hashes_run = set()
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
 
     for state, url in SITES.items():
         print(f"\n🔍 Searching in {state}")
-        success = False
 
         for attempt in range(1, MAX_RETRIES + 1):
             page = browser.new_page()
             page.set_default_timeout(90000)
-            page.set_default_navigation_timeout(90000)
 
             try:
                 print(f"  Attempt {attempt}")
                 page.goto(url, wait_until="load")
 
-                # -------- NTPC POPUP CLOSE (SAFE FOR ALL) --------
-                try:
-                    if page.locator("button.alertbutclose").count() > 0:
-                        page.click("button.alertbutclose")
-                        page.wait_for_timeout(1000)
-                except:
-                    pass
+                if page.locator("button.alertbutclose").count() > 0:
+                    page.click("button.alertbutclose")
+                    page.wait_for_timeout(800)
 
-                page.wait_for_selector("#SearchDescription")
                 page.fill("#SearchDescription", KEYWORD)
                 page.click("#Go")
                 page.wait_for_load_state("networkidle")
 
-                if page.locator("span.error").count() > 0:
+                rows = page.locator("tr.even, tr.odd")
+
+                for i in range(rows.count()):
+                    cols = rows.nth(i).locator("td")
+                    title = cols.nth(4).inner_text().strip()
+                    tender_id = extract_tender_id(title)
+
+                    if not tender_id:
+                        continue
+
+                    identity_hash = compute_identity_hash(tender_id)
+
+                    # DOM-level duplicate protection
+                    if identity_hash in seen_hashes_run:
+                        continue
+
+                    seen_hashes_run.add(identity_hash)
+
                     results.append({
                         "State/UT": state,
-                        "S.No": "",
-                        "e-Published Date": "",
-                        "Closing Date": "",
-                        "Opening Date": "",
-                        "Title and Ref.No./Tender ID": "No Tenders found",
-                        "Organisation Chain": "",
-                        "First Seen Date": run_date,
-                        "New Today": "YES"
+                        "S.No": cols.nth(0).inner_text().strip(),
+                        "e-Published Date": cols.nth(1).inner_text().strip(),
+                        "Closing Date": cols.nth(2).inner_text().strip(),
+                        "Opening Date": cols.nth(3).inner_text().strip(),
+                        "Title and Ref.No./Tender ID": title,
+                        "Tender ID": tender_id,
+                        "Organisation Chain": cols.nth(5).inner_text().strip(),
+                        "First Seen Date": RUN_DATE,
+                        "Identity Hash": identity_hash
                     })
-                else:
-                    rows = page.locator("tr.even")
-                    for i in range(rows.count()):
-                        cols = rows.nth(i).locator("td")
-                        results.append({
-                            "State/UT": state,
-                            "S.No": cols.nth(0).inner_text().strip(),
-                            "e-Published Date": cols.nth(1).inner_text().strip(),
-                            "Closing Date": cols.nth(2).inner_text().strip(),
-                            "Opening Date": cols.nth(3).inner_text().strip(),
-                            "Title and Ref.No./Tender ID": cols.nth(4).inner_text().strip(),
-                            "Organisation Chain": cols.nth(5).inner_text().strip(),
-                            "First Seen Date": run_date,
-                            "New Today": "YES"
-                        })
 
-                success = True
                 break
 
             except Exception as e:
@@ -136,48 +146,35 @@ with sync_playwright() as p:
             finally:
                 page.close()
 
-        if not success:
-            results.append({
-                "State/UT": state,
-                "S.No": "",
-                "e-Published Date": "",
-                "Closing Date": "",
-                "Opening Date": "",
-                "Title and Ref.No./Tender ID": "FAILED after retries",
-                "Organisation Chain": "",
-                "First Seen Date": run_date,
-                "New Today": "YES"
-            })
-
     browser.close()
 
-# ======================= EXCEL MERGE =======================
+# ======================= MERGE & FLAG =======================
 
 new_df = pd.DataFrame(results)
 
 if os.path.exists(OUTPUT_FILE):
     old_df = pd.read_excel(OUTPUT_FILE)
+    old_df.columns = [c.strip() for c in old_df.columns]
 
-    existing_keys = set(
-        zip(old_df["State/UT"], old_df["Title and Ref.No./Tender ID"])
+    # Ensure hash exists
+    if "Identity Hash" not in old_df.columns:
+        old_df["Identity Hash"] = old_df["Tender ID"].apply(compute_identity_hash)
+
+    # 🔴 CRITICAL FIX: reset flags every run
+    old_df["New Today"] = "NO"
+
+    existing_hashes = set(old_df["Identity Hash"].astype(str))
+    new_df["New Today"] = new_df["Identity Hash"].apply(
+        lambda h: "NO" if h in existing_hashes else "YES"
     )
 
-    def mark_new(row):
-        key = (row["State/UT"], row["Title and Ref.No./Tender ID"])
-        return "NO" if key in existing_keys else "YES"
+    combined = pd.concat([old_df, new_df], ignore_index=True)
+    combined.drop_duplicates(subset=["Identity Hash"], keep="first", inplace=True)
 
-    new_df["New Today"] = new_df.apply(mark_new, axis=1)
-
-    combined_df = pd.concat([old_df, new_df], ignore_index=True)
-
-    combined_df.drop_duplicates(
-        subset=["State/UT", "Title and Ref.No./Tender ID"],
-        keep="first",
-        inplace=True
-    )
 else:
-    combined_df = new_df
+    new_df["New Today"] = "YES"
+    combined = new_df
 
-combined_df.to_excel(OUTPUT_FILE, index=False)
+combined.to_excel(OUTPUT_FILE, index=False)
 
-print("\n✅ Done. Excel updated with 'New Today' column.")
+print("\n✅ Done. Tender-ID-only identity enforced. New Today flags are now correct.")
